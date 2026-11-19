@@ -13,7 +13,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -33,6 +32,15 @@ class TicketValidationTest {
         Ticket ticket = new Ticket("Payment Issue", "Cannot checkout using credit card on portal", "customer@example.com", "HIGH");
         Set<ConstraintViolation<Ticket>> violations = validator.validate(ticket);
         assertTrue(violations.isEmpty(), "Expected no violations for valid ticket");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"AUTO", "LOW", "MEDIUM", "HIGH", "CRITICAL"})
+    @DisplayName("Allowed priority values including AUTO should pass validation")
+    void allowedPriorities_ShouldPassValidation(String priority) {
+        Ticket ticket = new Ticket("Valid Title", "Valid description with sufficient length", "user@example.com", priority);
+        Set<ConstraintViolation<Ticket>> violations = validator.validate(ticket);
+        assertTrue(violations.isEmpty(), "Expected priority " + priority + " to pass validation");
     }
 
     @Test

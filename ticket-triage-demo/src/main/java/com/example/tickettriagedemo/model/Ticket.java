@@ -38,9 +38,9 @@ public class Ticket {
     @Column(nullable = false, length = 254)
     private String customerEmail;
 
-    @Pattern(regexp = "^(LOW|MEDIUM|HIGH|CRITICAL)$", message = "Priority must be LOW, MEDIUM, HIGH, or CRITICAL")
+    @Pattern(regexp = "^(AUTO|LOW|MEDIUM|HIGH|CRITICAL)$", message = "Priority must be AUTO, LOW, MEDIUM, HIGH, or CRITICAL")
     @Column(nullable = false, length = 20)
-    private String priority = "MEDIUM";
+    private String priority = "AUTO";
 
     @Pattern(regexp = "^(OPEN|IN_PROGRESS|RESOLVED|CLOSED)$", message = "Status must be OPEN, IN_PROGRESS, RESOLVED, or CLOSED")
     @Column(nullable = false, length = 20)
@@ -50,17 +50,19 @@ public class Ticket {
     private LocalDateTime createdAt;
 
     public Ticket() {
+        this.priority = "AUTO";
+        this.status = "OPEN";
     }
 
     public Ticket(String title, String description, String customerEmail) {
-        this(title, description, customerEmail, "MEDIUM");
+        this(title, description, customerEmail, "AUTO");
     }
 
     public Ticket(String title, String description, String customerEmail, String priority) {
         this.title = title != null ? title.trim() : null;
         this.description = description != null ? description.trim() : null;
         this.customerEmail = customerEmail != null ? customerEmail.trim() : null;
-        this.priority = (priority != null && !priority.isBlank()) ? priority.toUpperCase().trim() : "MEDIUM";
+        this.priority = (priority != null && !priority.isBlank()) ? priority.toUpperCase().trim() : "AUTO";
         this.status = "OPEN";
     }
 
@@ -72,7 +74,7 @@ public class Ticket {
         if (this.status == null || this.status.isBlank()) {
             this.status = "OPEN";
         }
-        if (this.priority == null || this.priority.isBlank()) {
+        if (this.priority == null || this.priority.isBlank() || "AUTO".equalsIgnoreCase(this.priority)) {
             this.priority = "MEDIUM";
         }
     }
@@ -114,7 +116,7 @@ public class Ticket {
     }
 
     public void setPriority(String priority) {
-        this.priority = priority != null ? priority.toUpperCase().trim() : "MEDIUM";
+        this.priority = priority != null ? priority.toUpperCase().trim() : "AUTO";
     }
 
     public String getStatus() {

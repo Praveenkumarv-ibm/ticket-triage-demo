@@ -2,6 +2,7 @@ package com.example.tickettriagedemo.controller;
 
 import com.example.tickettriagedemo.model.Ticket;
 import com.example.tickettriagedemo.service.TicketService;
+import com.example.tickettriagedemo.service.TicketTriageService.TriageResult;
 import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -39,8 +40,23 @@ public class TicketController {
             return "index";
         }
 
-        ticketService.saveTicket(ticket);
-        redirectAttributes.addFlashAttribute("successMessage", "Ticket submitted successfully!");
+        boolean requestedAuto = (ticket.getPriority() == null || "AUTO".equalsIgnoreCase(ticket.getPriority().trim()));
+        TriageResult triageResult = ticketService.processAndSaveTicket(ticket);
+
+        if (requestedAuto) {
+            if (triageResult.autoDetected()) {
+                redirectAttributes.addFlashAttribute("successMessage",
+                        "Ticket submitted successfully! Auto-assigned Priority: " + triageResult.priority()
+                                + " (matched keyword: '" + triageResult.matchedKeyword() + "').");
+            } else {
+                redirectAttributes.addFlashAttribute("warningMessage",
+                        "Ticket submitted successfully! Priority could not be automatically determined from content and was set to default (" + triageResult.priority() + ").");
+            }
+        } else {
+            redirectAttributes.addFlashAttribute("successMessage",
+                    "Ticket submitted successfully with Priority: " + triageResult.priority() + "!");
+        }
+
         return "redirect:/";
     }
 }

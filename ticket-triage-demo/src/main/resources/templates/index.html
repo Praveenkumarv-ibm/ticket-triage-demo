@@ -19,9 +19,15 @@
 
     <main class="container my-5">
         
-        <!-- Flash Alert -->
-        <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+        <!-- Flash Success Alert -->
+        <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show shadow-sm" role="alert" id="successAlert">
             <span th:text="${successMessage}">Ticket submitted successfully!</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <!-- Flash Warning / Triage Alert -->
+        <div th:if="${warningMessage}" class="alert alert-warning alert-dismissible fade show shadow-sm" role="alert" id="warningAlert">
+            <strong>⚠️ Notice: </strong><span th:text="${warningMessage}">Priority could not be auto-assigned.</span>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
 
@@ -65,13 +71,14 @@
                             <div class="form-text text-muted" th:unless="${#fields.hasErrors('customerEmail')}">Valid email format required.</div>
                         </div>
 
-                        <!-- Priority Field -->
+                        <!-- Priority Field with Auto-Assign -->
                         <div class="col-md-6">
                             <label for="priority" class="form-label fw-medium">Priority <span class="text-danger">*</span></label>
                             <select id="priority" 
                                     th:field="*{priority}" 
                                     class="form-select"
                                     th:classappend="${#fields.hasErrors('priority')} ? 'is-invalid' : ''">
+                                <option value="AUTO">🤖 Auto-Assign (from keywords)</option>
                                 <option value="LOW">Low</option>
                                 <option value="MEDIUM">Medium</option>
                                 <option value="HIGH">High</option>
@@ -80,6 +87,7 @@
                             <div class="invalid-feedback" th:if="${#fields.hasErrors('priority')}" th:errors="*{priority}">
                                 Priority error
                             </div>
+                            <div class="form-text text-muted" th:unless="${#fields.hasErrors('priority')}">Auto-assign detects urgency keywords (outage, down, error, etc.).</div>
                         </div>
 
                         <!-- Description Field -->

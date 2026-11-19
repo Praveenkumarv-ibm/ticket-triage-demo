@@ -3,6 +3,8 @@ package com.example.tickettriagedemo;
 import com.example.tickettriagedemo.model.Ticket;
 import com.example.tickettriagedemo.repository.TicketRepository;
 import com.example.tickettriagedemo.service.TicketService;
+import com.example.tickettriagedemo.service.TicketTriageService;
+import com.example.tickettriagedemo.service.TicketTriageService.TriageResult;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -19,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -27,6 +30,9 @@ class TicketServiceTest {
 
     @Mock
     private TicketRepository ticketRepository;
+
+    @Mock
+    private TicketTriageService ticketTriageService;
 
     @InjectMocks
     private TicketService ticketService;
@@ -70,20 +76,38 @@ class TicketServiceTest {
     }
 
     @Test
-    @DisplayName("saveTicket should apply defaults and save ticket")
-    void saveTicket_ShouldApplyDefaultsAndSave() {
-        Ticket rawTicket = new Ticket("Printer Out", "Printer on 2nd floor is out of paper", "user@company.com");
-        rawTicket.setPriority(null);
-        rawTicket.setStatus(null);
+    @DisplayName("saveTicket should apply auto-triage and save ticket")
+    void saveTicket_ShouldApplyTriageAndSave() {
+        Ticket rawTicket = new Ticket("Production outage", "The system has crashed completely", "user@company.com", "AUTO");
 
+        when(ticketTriageService.evaluatePriority(eq("Production outage"), eq("The system has crashed completely"), eq("AUTO")))
+                .thenReturn(new TriageResult("CRITICAL", true, "outage"));
         when(ticketRepository.save(any(Ticket.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         Ticket saved = ticketService.saveTicket(rawTicket);
 
         assertNotNull(saved);
-        assertEquals("MEDIUM", saved.getPriority());
+        assertEquals("CRITICAL", saved.getPriority());
         assertEquals("OPEN", saved.getStatus());
         verify(ticketRepository).save(rawTicket);
+    }
+
+    @Test
+    @DisplayName("processAndSaveTicket should return TriageResult with matched details")
+    void processAndSaveTicket_ShouldReturnTriageResult() {
+        Ticket rawTicket = new Ticket("General Question", "How do I reset password?", "user@company.com", "AUTO");
+
+        when(ticketTriageService.evaluatePriority(any(), any(), eq("AUTO")))
+                .thenReturn(new TriageResult("LOW", true, "question"));
+        when(ticketRepository.save(any(Ticket.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        TriageResult result = ticketService.processAndSaveTicket(rawTicket);
+
+        assertNotNull(result);
+        assertEquals("LOW", result.priority());
+        assertTrue(result.autoDetected());
+        assertEquals("question", result.matchedKeyword());
+        assertEquals("LOW", rawTicket.getPriority());
     }
 
     @Test
